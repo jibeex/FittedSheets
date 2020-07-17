@@ -10,6 +10,11 @@
 import UIKit
 
 open class SheetViewController: UIViewController {
+
+    private enum Constant {
+        static let statusBarSizeOnPhoneWithoutNotch: CGFloat = 20
+    }
+
     // MARK: - Public Properties
     public private(set) var childViewController: UIViewController!
     
@@ -24,7 +29,7 @@ open class SheetViewController: UIViewController {
     }
     public var handleSize: CGSize = CGSize(width: 50, height: 6)
     public var handleTopEdgeInset: CGFloat = 9
-    public var fullScreenTopEdgeInset: CGFloat = 64
+    public var fullScreenSizeTopEdgeInset: CGFloat = 64
     public var handleBottomEdgeInset: CGFloat = 9
     
     /// If true, tapping on the overlay above the sheet will dismiss the sheet view controller
@@ -48,6 +53,9 @@ open class SheetViewController: UIViewController {
     }
     
     private var firstPanPoint: CGPoint = CGPoint.zero
+
+    /// If true, the child view controller will be inset to account for the top safe area. This must be set before the sheet view controller loads for it to function properly
+    public var adjustForTopSafeArea: Bool = false
     
     /// If true, the child view controller will be inset to account for the bottom safe area. This must be set before the sheet view controller loads for it to function properly
     public var adjustForBottomSafeArea: Bool = false
@@ -96,8 +104,16 @@ open class SheetViewController: UIViewController {
         if #available(iOS 11.0, *) {
             inserts = UIApplication.shared.keyWindow?.safeAreaInsets ?? inserts
         }
-        inserts.top = max(inserts.top, 20)
+        inserts.top = max(inserts.top, Constant.statusBarSizeOnPhoneWithoutNotch)
         return inserts
+    }
+
+    private var containerTopMargin: CGFloat {
+        if adjustForTopSafeArea {
+            return safeAreaInsets.top + fullScreenSizeTopEdgeInset
+        } else {
+            return fullScreenSizeTopEdgeInset
+        }
     }
     
     // MARK: - Functions
@@ -205,7 +221,7 @@ open class SheetViewController: UIViewController {
         self.view.addSubview(self.containerView) { (subview) in
             subview.edges(.left, .right).pinToSuperview()
             self.containerBottomConstraint = subview.bottom.pinToSuperview()
-            subview.top.pinToSuperview(inset: self.safeAreaInsets.top + 20, relation: .greaterThanOrEqual)
+            subview.top.pinToSuperview(inset: containerTopMargin, relation: .greaterThanOrEqual)
             self.containerHeightConstraint = subview.height.set(self.height(for: self.containerSize))
             self.containerHeightConstraint.priority = UILayoutPriority(900)
         }
@@ -461,10 +477,9 @@ open class SheetViewController: UIViewController {
             case .fixed(let height):
                 return height
             case .fullScreen:
-                let insets = self.safeAreaInsets
-                return UIScreen.main.bounds.height - insets.top - fullScreenTopEdgeInset
+                return view.bounds.height - containerTopMargin
             case .halfScreen:
-                return (UIScreen.main.bounds.height) / 2 + 24
+                return view.bounds.height / 2
         }
     }
 }
