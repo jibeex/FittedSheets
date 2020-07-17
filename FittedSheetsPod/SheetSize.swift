@@ -11,5 +11,6 @@ import CoreGraphics
 public enum SheetSize {
     case fixed(CGFloat)
     case halfScreen
+    case pencentageOfScreen(CGFloat)
     case fullScreen
 }

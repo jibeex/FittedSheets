@@ -480,6 +480,8 @@ open class SheetViewController: UIViewController {
                 return view.bounds.height - containerTopMargin
             case .halfScreen:
                 return view.bounds.height / 2
+            case let .pencentageOfScreen(percentage):
+                return view.bounds.height  * percentage / 100.0
         }
     }
 }
