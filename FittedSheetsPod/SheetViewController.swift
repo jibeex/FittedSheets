@@ -353,39 +353,42 @@ open class SheetViewController: UIViewController {
         
         let minHeight = min(self.height(for: self.actualContainerSize), self.height(for: self.orderedSheetSizes.first))
         let maxHeight = max(self.height(for: self.actualContainerSize), self.height(for: self.orderedSheetSizes.last))
-        
-        var newHeight = max(0, self.height(for: self.actualContainerSize) + (self.firstPanPoint.y - point.y))
-        var offset: CGFloat = 0
+        let panOffsetY = self.firstPanPoint.y - point.y
+        var newHeight = max(0, self.height(for: self.actualContainerSize) + panOffsetY)
+        var containerOffset: CGFloat = 0
         if newHeight < minHeight {
-            offset = minHeight - newHeight
+            containerOffset = minHeight - newHeight
             newHeight = minHeight
         }
         if newHeight > maxHeight {
             newHeight = maxHeight
         }
         
-        if gesture.state == .cancelled || gesture.state == .failed {
+        if gesture.state == .cancelled || gesture.state == .failed{
             UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut], animations: {
                 self.containerView.transform = CGAffineTransform.identity
                 self.containerHeightConstraint.constant = self.height(for: self.containerSize)
             }, completion: nil)
         } else if gesture.state == .ended {
-            let velocity = (0.2 * gesture.velocity(in: self.view).y)
-            var finalHeight = newHeight - offset - velocity
-            if velocity > 500 {
+            let velocity = gesture.velocity(in: self.view).y
+            let factoredVelocity = (0.2 * velocity)
+            print("velocity: \(factoredVelocity) panOffsetY: \(panOffsetY)")
+            var finalHeight = newHeight - containerOffset - factoredVelocity
+            if factoredVelocity > 500 {
                 // They swiped hard, always just close the sheet when they do
                 finalHeight = -1
             }
             
-            let animationDuration = TimeInterval(abs(velocity*0.0002) + 0.2)
+            let animationDuration = TimeInterval(0.8 - abs(factoredVelocity * 0.0002))
+            print("Animation duration: \(animationDuration)")
             
-            guard finalHeight >= (minHeight / 2) || !dismissOnPan || !dismissable else {
+            guard finalHeight >= (minHeight * 2 / 3) || !dismissOnPan || !dismissable else {
                 // Dismiss
                 self.dismissWithAnimation(duration: animationDuration)
                 return
             }
             
-            var newSize = self.containerSize
+            var newSize: SheetSize
             if point.y < 0 {
                 // We need to move to the next larger one
                 newSize = self.orderedSheetSizes.last ?? self.containerSize
@@ -407,23 +410,33 @@ open class SheetViewController: UIViewController {
                     }
                 }
             }
-            self.containerSize = newSize
-            
-            UIView.animate(withDuration: animationDuration, delay: 0, options: [.curveEaseOut], animations: {
-                self.containerView.transform = CGAffineTransform.identity
-                self.containerHeightConstraint.constant = self.height(for: newSize)
-                self.view.layoutIfNeeded()
-            }, completion: { [weak self] complete in
-                guard let self = self else { return }
-                self.actualContainerSize = .fixed(self.containerView.frame.height)
-            })
+
+            let distanceToNextLevel = abs(self.height(for: newSize) - self.height(for: containerSize))
+
+            if distanceToNextLevel / 3 < abs(panOffsetY) || abs(factoredVelocity) > 80 {
+                self.containerSize = newSize
+            }
+
+            UIView.animate(withDuration: animationDuration,
+                           delay: 0,
+                           usingSpringWithDamping: 0.7,
+                           initialSpringVelocity: 0,
+                           options: [.curveEaseInOut],
+                           animations: {
+                               self.containerView.transform = CGAffineTransform.identity
+                            self.containerHeightConstraint.constant = self.height(for: self.containerSize)
+                               self.view.layoutIfNeeded()
+                           }, completion: { [weak self] complete in
+                               guard let self = self else { return }
+                               self.actualContainerSize = .fixed(self.containerView.frame.height)
+                           })
         } else {
             Constraints(for: self.containerView) { (containerView) in
                 self.containerHeightConstraint.constant = newHeight
             }
             
-            if offset > 0 {
-                self.containerView.transform = CGAffineTransform(translationX: 0, y: offset)
+            if containerOffset > 0 {
+                self.containerView.transform = CGAffineTransform(translationX: 0, y: containerOffset)
             } else {
                 self.containerView.transform = CGAffineTransform.identity
             }
@@ -461,7 +474,7 @@ open class SheetViewController: UIViewController {
     }
 
     private func dismissWithAnimation(duration: TimeInterval) {
-        UIView.animate(withDuration: duration, delay: 0, options: [.curveEaseOut], animations: { [weak self] in
+        UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: { [weak self] in
             self?.containerView.transform = CGAffineTransform(translationX: 0, y: self?.containerView.frame.height ?? 0)
             self?.view.backgroundColor = UIColor.clear
         }, completion: { [weak self] complete in
