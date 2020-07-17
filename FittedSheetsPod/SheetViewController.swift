@@ -464,6 +464,8 @@ open class SheetViewController: UIViewController {
                 return UIScreen.main.bounds.height - insets.top - 20
             case .halfScreen:
                 return (UIScreen.main.bounds.height) / 2 + 24
+            case let .pencentageOfScreen(percentage):
+                return UIScreen.main.bounds.height * percentage / 100.0 + 24
         }
     }
 }
