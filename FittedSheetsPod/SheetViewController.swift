@@ -24,6 +24,7 @@ open class SheetViewController: UIViewController {
     }
     public var handleSize: CGSize = CGSize(width: 50, height: 6)
     public var handleTopEdgeInset: CGFloat = 9
+    public var fullScreenTopEdgeInset: CGFloat = 64
     public var handleBottomEdgeInset: CGFloat = 9
     
     /// If true, tapping on the overlay above the sheet will dismiss the sheet view controller
@@ -461,7 +462,7 @@ open class SheetViewController: UIViewController {
                 return height
             case .fullScreen:
                 let insets = self.safeAreaInsets
-                return UIScreen.main.bounds.height - insets.top - 20
+                return UIScreen.main.bounds.height - insets.top - fullScreenTopEdgeInset
             case .halfScreen:
                 return (UIScreen.main.bounds.height) / 2 + 24
         }
