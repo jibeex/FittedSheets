@@ -381,12 +381,7 @@ open class SheetViewController: UIViewController {
             
             guard finalHeight >= (minHeight / 2) || !dismissOnPan || !dismissable else {
                 // Dismiss
-                UIView.animate(withDuration: animationDuration, delay: 0, options: [.curveEaseOut], animations: { [weak self] in
-                    self?.containerView.transform = CGAffineTransform(translationX: 0, y: self?.containerView.frame.height ?? 0)
-                    self?.view.backgroundColor = UIColor.clear
-                }, completion: { [weak self] complete in
-                    self?.dismiss(animated: false, completion: nil)
-                })
+                self.dismissWithAnimation(duration: animationDuration)
                 return
             }
             
@@ -463,6 +458,15 @@ open class SheetViewController: UIViewController {
             self.childViewController.view.setNeedsLayout()
             self.view.layoutIfNeeded()
         }, completion: nil)
+    }
+
+    private func dismissWithAnimation(duration: TimeInterval) {
+        UIView.animate(withDuration: duration, delay: 0, options: [.curveEaseOut], animations: { [weak self] in
+            self?.containerView.transform = CGAffineTransform(translationX: 0, y: self?.containerView.frame.height ?? 0)
+            self?.view.backgroundColor = UIColor.clear
+        }, completion: { [weak self] complete in
+            self?.dismiss(animated: false, completion: nil)
+        })
     }
     
     /// Handle a scroll view in the child view controller by watching for the offset for the scrollview and taking priority when at the top (so pulling up/down can grow/shrink the sheet instead of bouncing the child's scroll view)
