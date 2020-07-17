@@ -221,7 +221,7 @@ open class SheetViewController: UIViewController {
         self.view.addSubview(self.containerView) { (subview) in
             subview.edges(.left, .right).pinToSuperview()
             self.containerBottomConstraint = subview.bottom.pinToSuperview()
-            subview.top.pinToSuperview(inset: containerTopMargin, relation: .greaterThanOrEqual)
+            subview.top.pinToSuperview(inset: 0, relation: .greaterThanOrEqual)
             self.containerHeightConstraint = subview.height.set(self.height(for: self.containerSize))
             self.containerHeightConstraint.priority = UILayoutPriority(900)
         }
@@ -354,6 +354,7 @@ open class SheetViewController: UIViewController {
         let minHeight = min(self.height(for: self.actualContainerSize), self.height(for: self.orderedSheetSizes.first))
         let maxHeight = max(self.height(for: self.actualContainerSize), self.height(for: self.orderedSheetSizes.last))
         let panOffsetY = self.firstPanPoint.y - point.y
+        print("panOffsetY: \(panOffsetY)")
         var newHeight = max(0, self.height(for: self.actualContainerSize) + panOffsetY)
         var containerOffset: CGFloat = 0
         if newHeight < minHeight {
@@ -361,7 +362,7 @@ open class SheetViewController: UIViewController {
             newHeight = minHeight
         }
         if newHeight > maxHeight {
-            newHeight = maxHeight
+           newHeight = maxHeight
         }
         
         if gesture.state == .cancelled || gesture.state == .failed{
@@ -372,7 +373,7 @@ open class SheetViewController: UIViewController {
         } else if gesture.state == .ended {
             let velocity = gesture.velocity(in: self.view).y
             let factoredVelocity = (0.2 * velocity)
-            print("velocity: \(factoredVelocity) panOffsetY: \(panOffsetY)")
+            print("velocity: \(factoredVelocity)")
             var finalHeight = newHeight - containerOffset - factoredVelocity
             if factoredVelocity > 500 {
                 // They swiped hard, always just close the sheet when they do
@@ -413,7 +414,7 @@ open class SheetViewController: UIViewController {
 
             let distanceToNextLevel = abs(self.height(for: newSize) - self.height(for: containerSize))
 
-            if distanceToNextLevel / 3 < abs(panOffsetY) || abs(factoredVelocity) > 80 {
+            if distanceToNextLevel / 3 < abs(panOffsetY) || abs(factoredVelocity) > 70 {
                 self.containerSize = newSize
             }
 
@@ -433,6 +434,7 @@ open class SheetViewController: UIViewController {
         } else {
             Constraints(for: self.containerView) { (containerView) in
                 self.containerHeightConstraint.constant = newHeight
+                print("Set new height: \(newHeight)")
             }
             
             if containerOffset > 0 {
